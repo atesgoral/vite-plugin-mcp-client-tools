@@ -70,7 +70,7 @@ export function viteMcpPlugin({
         {
           title: name,
           description,
-          inputSchema,
+          ...(inputSchema && { inputSchema }),
         },
         async (params: unknown) => {
           try {
