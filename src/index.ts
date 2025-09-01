@@ -317,7 +317,7 @@ export function viteMcpPlugin({
             ? [
                 ...webComponentRegistrations.map((registration) => ({
                   tag: "script",
-                  children: "/*HI*/" + registration,
+                  children: registration,
                   injectTo: "head-prepend" as const,
                 })),
                 {
