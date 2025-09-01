@@ -1,10 +1,7 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 
 import type { Plugin, ViteDevServer } from "vite";
-import {
-  McpServer,
-  type ToolCallback,
-} from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
@@ -12,11 +9,17 @@ import { z } from "zod";
 import { mcpBridge } from "./bridge.js";
 import { Deferred } from "./deferred.js";
 
-export interface McpTool {
+export interface McpTool<
+  Input extends z.ZodRawShape | undefined = undefined,
+  Output extends z.ZodRawShape | undefined = undefined
+> {
   name: string;
   description: string;
-  inputSchema?: Record<string, z.ZodType>;
-  handler: ToolCallback;
+  inputSchema?: Input;
+  outputSchema?: Output;
+  handler: (
+    args?: z.objectOutputType<z.ZodRawShape, z.ZodTypeAny>
+  ) => Promise<CallToolResult>;
   component?: (Base: typeof HTMLElement) => CustomElementConstructor;
   server?: {
     [method: string]: (args: {
@@ -29,7 +32,7 @@ interface ViteMcpPluginOptions {
   endpoint?: string;
   name?: string;
   version?: string;
-  tools?: McpTool[];
+  tools?: McpTool<z.ZodRawShape | undefined, z.ZodRawShape | undefined>[];
 }
 
 export function viteMcpPlugin({
@@ -61,13 +64,14 @@ export function viteMcpPlugin({
       { capabilities: { tools: {} } }
     );
 
-    for (const { name, description, inputSchema } of tools) {
+    for (const { name, description, inputSchema, outputSchema } of tools) {
       server.registerTool(
         name,
         {
           title: name,
           description,
           ...(inputSchema && { inputSchema }),
+          ...(outputSchema && { outputSchema }),
         },
         async (params: unknown) => {
           try {

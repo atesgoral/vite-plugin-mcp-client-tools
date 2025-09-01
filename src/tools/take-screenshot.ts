@@ -1,12 +1,19 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
+import { z } from "zod";
+
 import type { McpTool } from "../index.js";
 
-export const takeScreenshotTool = {
+const outputSchema = {
+  path: z.string(),
+};
+
+export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
   name: "take-screenshot",
   description:
     "Capture a screenshot of the shared screen via browser screen sharing",
+  outputSchema,
   handler: async function () {
     const dataUrl = await this.component.captureScreenshot();
 
@@ -193,4 +200,4 @@ export const takeScreenshotTool = {
       return { path: filepath };
     },
   } as const,
-} satisfies McpTool;
+};

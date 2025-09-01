@@ -2,13 +2,15 @@ import { z } from "zod";
 
 import type { McpTool } from "../index.js";
 
-export const readConsoleTool = {
+const inputSchema = {
+  level: z.enum(["log", "warn", "error", "info"]),
+};
+
+export const readConsoleTool: McpTool<typeof inputSchema> = {
   name: "read-console",
   description: "Read the console log",
-  inputSchema: {
-    level: z.enum(["log", "warn", "error", "info"]),
-  },
-  handler: async ({ level }: { level: string }) => {
+  inputSchema,
+  handler: async (args) => {
     return {
       content: [
         {
@@ -18,4 +20,4 @@ export const readConsoleTool = {
       ],
     };
   },
-} satisfies McpTool;
+};
