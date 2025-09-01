@@ -59,3 +59,10 @@ This example includes two MCP tools:
   - `quality` (optional): Image quality from 0-1 - defaults to `0.8`
 
 You can test these tools by connecting an MCP client to the `/mcp` endpoint.
+
+```bash
+curl \
+  -H "Accept: application/json, text/event-stream"
+  --json '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"read-console","arguments":{"level":"info"}},"id":1}' \
+  http://localhost:3000/mcp
+```
