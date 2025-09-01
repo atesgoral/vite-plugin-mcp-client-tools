@@ -9,6 +9,14 @@
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./tools/read-console": {
+      "import": "./dist/tools/read-console.js",
+      "require": "./dist/tools/read-console.cjs"
+    },
+    "./tools/take-screenshot": {
+      "import": "./dist/tools/take-screenshot.js",
+      "require": "./dist/tools/take-screenshot.cjs"
     }
   },
   "scripts": {
