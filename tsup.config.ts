@@ -6,6 +6,7 @@ export default defineConfig({
   clean: true,
   format: ["esm", "cjs"],
   external: ["zod", "@modelcontextprotocol/sdk"],
+  splitting: false,
   sourcemap: true,
   dts: true,
 });
