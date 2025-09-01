@@ -1,15 +1,11 @@
 import type { ViteHotContext } from "vite/types/hot.js";
 import type { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+import { Deferred } from "./deferred.js";
 import "./vite-custom-events.d.ts";
 
 interface Tool {
   handler: ToolCallback;
-}
-
-interface Deferred<T> {
-  resolve: (result: T) => void;
-  reject: (error: unknown) => void;
 }
 
 export function mcpBridge(hot: ViteHotContext, tools: Map<string, Tool>) {
@@ -57,13 +53,12 @@ export function mcpBridge(hot: ViteHotContext, tools: Map<string, Tool>) {
 
                 const id = `${Date.now()}${Math.random()}`;
                 const name = `${toolName}:${methodName}`;
+                const deferred = new Deferred<{ [key: string]: unknown }>();
 
-                return new Promise<{ [key: string]: unknown }>(
-                  (resolve, reject) => {
-                    pendingServerMethodCalls.set(id, { resolve, reject });
-                    hot.send("mcp:tool-server-call", { id, name, params });
-                  }
-                );
+                pendingServerMethodCalls.set(id, deferred);
+                hot.send("mcp:tool-server-call", { id, name, params });
+
+                return deferred.promise;
               };
             },
           }

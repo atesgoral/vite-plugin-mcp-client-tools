@@ -10,6 +10,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { z } from "zod";
 
 import { mcpBridge } from "./bridge.js";
+import { Deferred } from "./deferred.js";
 
 export interface McpTool {
   name: string;
@@ -39,20 +40,16 @@ export function viteMcpPlugin({
 }: ViteMcpPluginOptions = {}): Plugin {
   let viteServer: ViteDevServer | null = null;
 
-  interface Deferred<T> {
-    resolve: (result: T) => void;
-    reject: (error: unknown) => void;
-  }
-
   const pendingToolCalls = new Map<string, Deferred<CallToolResult>>();
 
   async function dispatchToolCall(name: string, params: unknown) {
     const id = `${Date.now()}${Math.random()}`;
+    const deferred = new Deferred<CallToolResult>();
 
-    return new Promise<CallToolResult>((resolve, reject) => {
-      pendingToolCalls.set(id, { resolve, reject });
-      viteServer?.ws.send("mcp:tool-call", { id, name, params });
-    });
+    pendingToolCalls.set(id, deferred);
+    viteServer?.ws.send("mcp:tool-call", { id, name, params });
+
+    return deferred.promise;
   }
 
   const createMcpServer = () => {
