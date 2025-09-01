@@ -224,6 +224,7 @@ export function viteMcpPlugin({
                     body = rawBody ? JSON.parse(rawBody) : undefined;
                   } catch (error) {
                     console.error("Failed to parse JSON body:", error);
+                    console.error("Raw body:", rawBody);
                     body = undefined;
                   }
                   resolve();
