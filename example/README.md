@@ -12,11 +12,13 @@ A minimal Vite application demonstrating the `vite-plugin-mcp` plugin with Hot M
 ## Getting Started
 
 1. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 2. **Start development server:**
+
    ```bash
    npm run dev
    ```
@@ -48,11 +50,13 @@ The MCP server is available at `/mcp` when running in development mode.
 This example includes two MCP tools:
 
 ### read-console
+
 - **Purpose**: Read console logs from the browser
 - **Parameters**:
   - `level` (optional): Filter by log level (`log`, `info`, `warn`, `error`)
 
 ### take-screenshot
+
 - **Purpose**: Take a screenshot of the current page
 - **Parameters**:
   - `format` (optional): Image format (`png`, `jpeg`, `webp`) - defaults to `png`
@@ -62,7 +66,10 @@ You can test these tools by connecting an MCP client to the `/mcp` endpoint.
 
 ```bash
 curl \
-  -H "Accept: application/json, text/event-stream"
-  --json '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"read-console","arguments":{"level":"info"}},"id":1}' \
+  -H "Accept: application/json, text/event-stream" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"read-console","arguments":{"level":"info"}}}' \
   http://localhost:3000/mcp
 ```
+
+Or use the `npm run test-read-console` or `npm run test-take-screenshot` commands.

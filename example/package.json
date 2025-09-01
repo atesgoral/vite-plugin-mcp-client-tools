@@ -4,7 +4,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test-read-console": "curl -H \"Accept: application/json, text/event-stream\" -H \"Content-Type: application/json\" -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"read-console\",\"arguments\":{\"level\":\"info\"}}}' http://localhost:3000/mcp",
+    "test-take-screenshot": "curl -H \"Accept: application/json, text/event-stream\" -H \"Content-Type: application/json\" -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"take-screenshot\"}}' http://localhost:3000/mcp"
   },
   "devDependencies": {
     "vite": "^5.0.0",
