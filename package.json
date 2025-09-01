@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsup src/index.ts --format esm,cjs --dts"
+    "build": "tsup"
   },
   "repository": {
     "type": "git",
