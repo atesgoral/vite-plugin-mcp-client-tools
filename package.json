@@ -2,8 +2,15 @@
   "name": "vite-plugin-mcp",
   "version": "0.0.1",
   "description": "Pluggable Vite MCP plugin",
-  "main": "index.js",
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsup"
