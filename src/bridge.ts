@@ -65,9 +65,17 @@ export function mcpBridge(hot: ViteHotContext, tools: Map<string, Tool>) {
         );
 
         // const result = await tool.handler.call({ component, server }, params);
-        tool.handler.call({ component, server }, params).then((result) => {
-          hot.send("mcp:tool-result", { id, result });
-        });
+        tool.handler
+          .call({ component, server }, params)
+          .then((result) => {
+            hot.send("mcp:tool-result", { id, result });
+          })
+          .catch((error) => {
+            hot.send("mcp:tool-result", {
+              id,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          });
         // hot.send("mcp:tool-result", { id, result });
       } catch (error) {
         console.error("Error calling tool", error);
