@@ -9,4 +9,7 @@ export default defineConfig({
       tools: [readConsoleTool, takeScreenshotTool],
     }),
   ],
+  server: {
+    port: 3000,
+  },
 });
