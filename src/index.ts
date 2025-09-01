@@ -33,7 +33,7 @@ interface ViteMcpPluginOptions {
 
 export function viteMcpPlugin({
   endpoint = "/mcp",
-  name = "vite-mcp-server",
+  name = "Vite MCP Server",
   version = "1.0.0",
   tools = [],
 }: ViteMcpPluginOptions = {}): Plugin {
@@ -129,7 +129,7 @@ export function viteMcpPlugin({
   };
 
   return {
-    name: "vite-mcp-plugin",
+    name: "Model Context Protocol Plugin",
     configureServer(server: ViteDevServer) {
       viteServer = server;
 

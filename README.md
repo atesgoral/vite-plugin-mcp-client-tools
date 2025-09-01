@@ -1,11 +1,11 @@
-# vite-mcp
+# vite-plugin-mcp
 
 Pluggable Vite MCP plugin
 
 ## Use
 
 ```
-npm install vite-mcp
+npm install vite-plugin-mcp
 ```
 
 ## Build

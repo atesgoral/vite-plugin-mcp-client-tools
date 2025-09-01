@@ -1,5 +1,5 @@
 {
-  "name": "vite-mcp",
+  "name": "vite-plugin-mcp",
   "version": "0.0.1",
   "description": "Pluggable Vite MCP plugin",
   "main": "index.js",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/atesgoral/vite-mcp.git"
+    "url": "git+https://github.com/atesgoral/vite-plugin-mcp.git"
   },
   "keywords": [
     "Vite",
@@ -20,9 +20,9 @@
   "author": "Ates Goral",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/atesgoral/vite-mcp/issues"
+    "url": "https://github.com/atesgoral/vite-plugin-mcp/issues"
   },
-  "homepage": "https://github.com/atesgoral/vite-mcp#readme",
+  "homepage": "https://github.com/atesgoral/vite-plugin-mcp#readme",
   "devDependencies": {
     "@types/node": "^24.3.0",
     "tsup": "^8.5.0",
