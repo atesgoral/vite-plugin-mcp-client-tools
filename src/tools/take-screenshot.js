@@ -3,13 +3,11 @@ import path from "node:path";
 
 import { z } from "zod";
 
-import type { McpTool } from "../index.js";
-
 const outputSchema = {
   path: z.string(),
 };
 
-export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
+export const takeScreenshotTool = {
   name: "take-screenshot",
   description:
     "Capture a screenshot of the shared screen via browser screen sharing",
@@ -28,8 +26,8 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
   },
   component: (Base) => {
     class ScreenShareOverlay extends Base {
-      private mediaStream: MediaStream | null = null;
-      private video: HTMLVideoElement | null = null;
+      #mediaStream = null;
+      #video = null;
 
       connectedCallback() {
         const shadow = this.attachShadow({ mode: "open" });
@@ -56,15 +54,15 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
         button.type = "button";
         button.textContent = "Start Screen Capture";
         button.disabled = false;
-        button.addEventListener("click", () => this.toggleScreenCapture());
+        button.addEventListener("click", () => this.#toggleScreenCapture());
 
         shadow.appendChild(style);
         shadow.appendChild(button);
       }
 
-      private async toggleScreenCapture() {
+      async #toggleScreenCapture() {
         try {
-          await this.startScreenCapture();
+          await this.#startScreenCapture();
         } catch (error) {
           if (
             error instanceof DOMException &&
@@ -77,7 +75,7 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
         }
       }
 
-      private async startScreenCapture() {
+      async #startScreenCapture() {
         const mediaStream = await navigator.mediaDevices.getDisplayMedia({
           video: {
             frameRate: { ideal: 30 },
@@ -86,14 +84,14 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
           preferCurrentTab: true,
           selfBrowserSurface: "include",
           surfaceSwitching: "exclude",
-        } as DisplayMediaStreamOptions & { preferCurrentTab: boolean });
+        });
 
         mediaStream.getTracks().forEach((track) => {
           track.addEventListener(
             "ended",
             () => {
               console.log(`${track.kind} track ended`);
-              this.stopScreenCapture();
+              this.#stopScreenCapture();
             },
             { once: true }
           );
@@ -104,8 +102,8 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
         video.srcObject = mediaStream;
         video.play();
 
-        this.mediaStream = mediaStream;
-        this.video = video;
+        this.#mediaStream = mediaStream;
+        this.#video = video;
 
         await new Promise((resolve, reject) => {
           video.addEventListener("loadedmetadata", resolve, { once: true });
@@ -119,45 +117,45 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
         // Add persistent error handler for ongoing video issues
         video.addEventListener("error", () => {
           console.error("Video error occurred during capture");
-          this.stopScreenCapture();
+          this.#stopScreenCapture();
         });
       }
 
-      private stopScreenCapture() {
-        if (this.mediaStream) {
-          this.mediaStream.getTracks().forEach((track) => track.stop());
-          this.mediaStream = null;
+      #stopScreenCapture() {
+        if (this.#mediaStream) {
+          this.#mediaStream.getTracks().forEach((track) => track.stop());
+          this.#mediaStream = null;
         }
 
-        if (this.video) {
-          this.video.srcObject = null;
-          this.video = null;
+        if (this.#video) {
+          this.#video.srcObject = null;
+          this.#video = null;
         }
       }
 
       async captureScreenshot() {
-        if (!this.video) throw new Error("Not capturing");
+        if (!this.#video) throw new Error("Not capturing");
 
         const canvas = new OffscreenCanvas(
-          this.video.videoWidth,
-          this.video.videoHeight
+          this.#video.videoWidth,
+          this.#video.videoHeight
         );
         const ctx = canvas.getContext("2d");
 
         if (!ctx) throw new Error("Could not obtain 2D context");
 
-        ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(this.#video, 0, 0, canvas.width, canvas.height);
 
         const blob = await canvas.convertToBlob({
           type: "image/jpeg",
           quality: 0.2,
         });
 
-        const dataUrl = await new Promise<string>((resolve) => {
+        const dataUrl = await new Promise((resolve) => {
           const reader = new FileReader();
           reader.addEventListener(
             "load",
-            () => resolve(reader.result as string),
+            () => resolve(reader.result),
             { once: true }
           );
           reader.readAsDataURL(blob);
@@ -179,10 +177,7 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
 
       if (!matches) throw new Error("Invalid image data URL format");
 
-      const { ext, base64Data } = matches.groups as {
-        ext: string;
-        base64Data: string;
-      };
+      const { ext, base64Data } = matches.groups;
 
       const buffer = Buffer.from(base64Data, "base64");
 
@@ -200,5 +195,5 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
 
       return { path: filepath };
     },
-  } as const,
+  },
 };
