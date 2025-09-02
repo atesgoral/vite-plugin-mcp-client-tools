@@ -9,29 +9,27 @@ import { z } from "zod";
 import { mcpBridge } from "./bridge.js";
 import { Deferred } from "./deferred.js";
 
-type ComponentFactory = (Base: typeof HTMLElement) => CustomElementConstructor;
-type ServerMethods = {
-  [method: string]: (args: {
+export type Handler = (
+  this: { component?: HTMLElement | undefined; server: ServerMethods },
+  input?: {
     [key: string]: unknown;
-  }) => Promise<{ [key: string]: unknown }>;
+  }
+) => Promise<CallToolResult>;
+
+type ComponentFactory = (Base: typeof HTMLElement) => CustomElementConstructor;
+
+export type ServerMethods = {
+  [method: string]: (args?: {
+    [key: string]: unknown;
+  }) => Promise<{ [key: string]: unknown } | undefined>;
 };
 
-type ToolCallback<Input extends undefined | z.ZodRawShape = undefined> =
-  Input extends z.ZodRawShape
-    ? (
-        args: z.objectOutputType<Input, z.ZodTypeAny>
-      ) => CallToolResult | Promise<CallToolResult>
-    : () => CallToolResult | Promise<CallToolResult>;
-
-export interface McpTool<
-  Input extends z.ZodRawShape | undefined = undefined,
-  Output extends z.ZodRawShape | undefined = undefined
-> {
+export interface McpTool {
   name: string;
   description: string;
-  inputSchema?: Input;
-  outputSchema?: Output;
-  handler: ToolCallback<Input>;
+  inputSchema?: z.ZodRawShape;
+  outputSchema?: z.ZodRawShape;
+  handler: Handler;
   component?: ComponentFactory;
   server?: ServerMethods;
 }
@@ -40,7 +38,7 @@ interface ViteMcpPluginOptions {
   endpoint?: string;
   name?: string;
   version?: string;
-  tools?: McpTool<z.ZodRawShape | undefined, z.ZodRawShape | undefined>[];
+  tools?: McpTool[];
 }
 
 export function viteMcpPlugin({
@@ -53,7 +51,10 @@ export function viteMcpPlugin({
 
   const pendingToolCalls = new Map<string, Deferred<CallToolResult>>();
 
-  async function dispatchToolCall(name: string, params: unknown) {
+  async function dispatchToolCall(
+    name: string,
+    params?: { [key: string]: unknown }
+  ) {
     const id = `${Date.now()}${Math.random()}`;
     const deferred = new Deferred<CallToolResult>();
 
@@ -81,9 +82,9 @@ export function viteMcpPlugin({
           ...(inputSchema && { inputSchema }),
           ...(outputSchema && { outputSchema }),
         },
-        async (params: unknown) => {
+        async (input: { [key: string]: unknown }) => {
           try {
-            const result = await dispatchToolCall(name, params);
+            const result = await dispatchToolCall(name, input);
             return result;
           } catch (error) {
             return {
@@ -202,7 +203,6 @@ export function viteMcpPlugin({
           );
           res.setHeader("Access-Control-Expose-Headers", "Mcp-Session-Id");
 
-          // Handle preflight requests
           if (req.method === "OPTIONS") {
             res.statusCode = 200;
             res.end();
@@ -210,46 +210,44 @@ export function viteMcpPlugin({
           }
 
           try {
-            // Create a fresh MCP server and transport for each request (stateless)
             const mcpServer = createMcpServer();
             const transport = new StreamableHTTPServerTransport({
-              sessionIdGenerator: undefined, // Stateless mode
-              enableJsonResponse: false, // Allow SSE streams
+              sessionIdGenerator: undefined,
+              enableJsonResponse: false,
             });
 
             await mcpServer.connect(transport);
 
-            // Parse body for POST requests
-            let body: unknown;
+            let parsedBody: unknown;
+
             if (req.method === "POST") {
               let rawBody = "";
-              req.on("data", (chunk) => {
-                rawBody += chunk.toString();
-              });
+
+              req.on("data", (chunk) => (rawBody += chunk.toString()));
 
               await new Promise<void>((resolve) => {
                 req.on("end", () => {
                   try {
-                    body = rawBody ? JSON.parse(rawBody) : undefined;
+                    parsedBody = rawBody ? JSON.parse(rawBody) : undefined;
                   } catch (error) {
                     console.error("Failed to parse JSON body:", error);
                     console.error("Raw body:", rawBody);
-                    body = undefined;
+                    parsedBody = undefined;
                   }
                   resolve();
                 });
               });
             }
 
-            await transport.handleRequest(req, res, body);
+            await transport.handleRequest(req, res, parsedBody);
 
-            // Clean up on connection close
             res.on("close", () => {
               transport.close();
               mcpServer.close();
             });
           } catch (error) {
             console.error("MCP request error:", error);
+
             if (!res.headersSent) {
               res.statusCode = 500;
               res.setHeader("Content-Type", "application/json");

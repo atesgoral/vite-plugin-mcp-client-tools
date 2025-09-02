@@ -1,11 +1,11 @@
 import type { ViteHotContext } from "vite/types/hot.js";
-import type { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 import { Deferred as DeferredClass } from "./deferred.js";
-import "./vite-custom-events.d.ts";
+import type { Handler, ServerMethods } from "./index.js";
 
 interface Tool {
-  handler: ToolCallback;
+  handler: Handler;
 }
 
 export function mcpBridge(
@@ -20,10 +20,18 @@ export function mcpBridge(
 
     const pendingServerMethodCalls = new Map<
       string,
-      typeof Deferred<{ [key: string]: unknown }>
+      DeferredClass<CallToolResult>
     >();
 
-    function handleServerMethodResult({ id, result, error }) {
+    function handleServerMethodResult({
+      id,
+      result,
+      error,
+    }: {
+      id: string;
+      result: CallToolResult;
+      error: unknown;
+    }) {
       const deferred = pendingServerMethodCalls.get(id);
 
       if (!deferred) {
@@ -40,15 +48,25 @@ export function mcpBridge(
       }
     }
 
-    function handleToolCall({ id, name: toolName, params }) {
+    function handleToolCall({
+      id,
+      name: toolName,
+      params,
+    }: {
+      id: string;
+      name: string;
+      params?: { [key: string]: unknown };
+    }) {
       try {
         const tool = tools.get(toolName);
 
         if (!tool) throw new Error(`Tool not found: ${toolName}`);
 
-        const component = document.querySelector(`${toolName}-element`);
+        const component =
+          document.querySelector<HTMLElement>(`${toolName}-element`) ??
+          undefined;
 
-        const server = new Proxy(
+        const server = new Proxy<ServerMethods>(
           {},
           {
             get(_target, methodName) {
@@ -57,7 +75,7 @@ export function mcpBridge(
 
                 const id = `${Date.now()}${Math.random()}`;
                 const name = `${toolName}:${methodName}`;
-                const deferred = new Deferred<{ [key: string]: unknown }>();
+                const deferred = new Deferred<CallToolResult>();
 
                 pendingServerMethodCalls.set(id, deferred);
                 hot.send("mcp:tool-server-call", { id, name, params });
@@ -68,19 +86,19 @@ export function mcpBridge(
           }
         );
 
-        // const result = await tool.handler.call({ component, server }, params);
         tool.handler
           .call({ component, server }, params)
-          .then((result) => {
+          .then((result: CallToolResult) => {
             hot.send("mcp:tool-result", { id, result });
           })
-          .catch((error) => {
+          .catch((error: unknown) => {
+            console.error("Error calling tool", error);
+
             hot.send("mcp:tool-result", {
               id,
               error: error instanceof Error ? error.message : String(error),
             });
           });
-        // hot.send("mcp:tool-result", { id, result });
       } catch (error) {
         console.error("Error calling tool", error);
 
