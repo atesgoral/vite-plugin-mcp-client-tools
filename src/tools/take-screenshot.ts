@@ -20,6 +20,7 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
     const { path } = await this.server.saveScreenshot({ dataUrl });
 
     return {
+      content: [],
       structuredContent: {
         path,
       },
@@ -172,25 +173,25 @@ export const takeScreenshotTool: McpTool<undefined, typeof outputSchema> = {
     saveScreenshot: async (args) => {
       const dataUrl = args.dataUrl;
 
-      if (typeof dataUrl !== "string")
-        throw new Error("dataUrl is not a string");
+      const matches = /^data:image\/(?<ext>\w+);base64,(?<base64Data>.+)$/.exec(
+        String(dataUrl)
+      );
 
-      const screenshotsDir = path.join(process.cwd(), "tmp", "screenshots");
-      await fs.mkdir(screenshotsDir, { recursive: true });
+      if (!matches) throw new Error("Invalid image data URL format");
 
-      const [mimeHeader, base64Data] = dataUrl.split(",");
-      if (!base64Data || !mimeHeader)
-        throw new Error("Invalid data URL format");
-
-      const mimeType = mimeHeader.split(";")[0];
-      const ext = mimeType.split("/")[1];
+      const { ext, base64Data } = matches.groups as {
+        ext: string;
+        base64Data: string;
+      };
 
       const buffer = Buffer.from(base64Data, "base64");
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const filename = `screenshot-${timestamp}.${ext}`;
+      const screenshotsDir = path.join(process.cwd(), "tmp", "screenshots");
       const filepath = path.join(screenshotsDir, filename);
 
+      await fs.mkdir(screenshotsDir, { recursive: true });
       await fs.writeFile(filepath, buffer);
 
       console.log(
