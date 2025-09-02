@@ -1,6 +1,6 @@
-# vite-plugin-mcp
+# vite-plugin-mcp-client-tools
 
-Pluggable Vite MCP plugin
+Pluggable Vite MCP plugin that brings client-side tools to your Vite setup.
 
 In very early stages of development. Still trying to bang out the API.
 
@@ -9,15 +9,15 @@ But it already comes with a very useful screenshot tool!
 ## Use
 
 ```sh
-npm install vite-plugin-mcp
+npm install vite-plugin-mcp-client-tools
 ```
 
 Then in your vite.config.js:
 
 ```ts
-import { viteMcpPlugin } from "vite-plugin-mcp";
-import { readConsoleTool } from "vite-plugin-mcp/tools/read-console";
-import { takeScreenshotTool } from "vite-plugin-mcp/tools/take-screenshot";
+import { viteMcpPlugin } from "vite-plugin-mcp-client-tools";
+import { readConsoleTool } from "vite-plugin-mcp-client-tools/tools/read-console";
+import { takeScreenshotTool } from "vite-plugin-mcp-client-tools/tools/take-screenshot";
 
 export default defineConfig({
   plugins: [

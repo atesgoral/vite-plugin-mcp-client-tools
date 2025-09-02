@@ -1,6 +1,6 @@
 # Vite MCP Example
 
-A minimal Vite application demonstrating the `vite-plugin-mcp` plugin with Hot Module Replacement (HMR).
+A minimal Vite application demonstrating the `vite-plugin-mcp-client-tools` plugin with Hot Module Replacement (HMR).
 
 ## Features
 
