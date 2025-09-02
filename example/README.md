@@ -11,19 +11,29 @@ A minimal Vite application demonstrating the `vite-plugin-mcp` plugin with Hot M
 
 ## Getting Started
 
-1. **Install dependencies:**
+1. **Build the plugin:**
+
+   (At the root of the project)
+
+   ```sh
+   npm run build
+   ```
+
+2. **Install dependencies:**
+
+   (In the example directory)
 
    ```sh
    npm install
    ```
 
-2. **Start development server:**
+3. **Start development server:**
 
    ```sh
    npm run dev
    ```
 
-3. **Open your browser** to http://localhost:3000
+4. **Open your browser** to http://localhost:3000
 
 ## MCP Endpoint
 
