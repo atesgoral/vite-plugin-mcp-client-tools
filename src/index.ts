@@ -290,7 +290,7 @@ export function viteMcpPlugin({
           .join(",");
 
         return {
-          code: `(${mcpBridge.toString()})(import.meta.hot, new Map([${serializedToolHandlers}]))`,
+          code: `(${mcpBridge.toString()})(import.meta.hot, new Map([${serializedToolHandlers}]), ${Deferred.toString()})`,
           map: null,
         };
       }

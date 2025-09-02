@@ -1,14 +1,18 @@
 import type { ViteHotContext } from "vite/types/hot.js";
 import type { ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-import { Deferred } from "./deferred.js";
+import { Deferred as DeferredClass } from "./deferred.js";
 import "./vite-custom-events.d.ts";
 
 interface Tool {
   handler: ToolCallback;
 }
 
-export function mcpBridge(hot: ViteHotContext, tools: Map<string, Tool>) {
+export function mcpBridge(
+  hot: ViteHotContext,
+  tools: Map<string, Tool>,
+  Deferred: typeof DeferredClass
+) {
   if (hot) {
     console.log("🔌 MCP Bridge ready!");
 
@@ -16,7 +20,7 @@ export function mcpBridge(hot: ViteHotContext, tools: Map<string, Tool>) {
 
     const pendingServerMethodCalls = new Map<
       string,
-      Deferred<{ [key: string]: unknown }>
+      typeof Deferred<{ [key: string]: unknown }>
     >();
 
     function handleServerMethodResult({ id, result, error }) {
