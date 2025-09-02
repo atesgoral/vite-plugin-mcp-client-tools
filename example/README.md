@@ -13,33 +13,17 @@ A minimal Vite application demonstrating the `vite-plugin-mcp` plugin with Hot M
 
 1. **Install dependencies:**
 
-   ```bash
+   ```sh
    npm install
    ```
 
 2. **Start development server:**
 
-   ```bash
+   ```sh
    npm run dev
    ```
 
-3. **Open your browser** to `http://localhost:3000`
-
-4. **Test HMR:** Edit `src/main.js` and watch the changes appear instantly!
-
-## What to Try
-
-- Change the counter logic in `src/main.js`
-- Modify the HTML template
-- Add new functions and see them work immediately
-- Check the browser console for HMR messages
-
-## Build for Production
-
-```bash
-npm run build
-npm run preview
-```
+3. **Open your browser** to http://localhost:3000
 
 ## MCP Endpoint
 
@@ -58,13 +42,12 @@ This example includes two MCP tools:
 ### take-screenshot
 
 - **Purpose**: Take a screenshot of the current page
-- **Parameters**:
-  - `format` (optional): Image format (`png`, `jpeg`, `webp`) - defaults to `png`
-  - `quality` (optional): Image quality from 0-1 - defaults to `0.8`
 
-You can test these tools by connecting an MCP client to the `/mcp` endpoint.
+### Take the tools for a spin
 
-```bash
+You can test these tools by pointing an MCP client to http://localhost:3000/mcp.
+
+```sh
 curl \
   -H "Accept: application/json, text/event-stream" \
   -H "Content-Type: application/json" \
