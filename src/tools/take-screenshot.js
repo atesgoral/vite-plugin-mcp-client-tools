@@ -18,7 +18,12 @@ export const takeScreenshotTool = {
     const { path } = await this.server.saveScreenshot({ dataUrl });
 
     return {
-      content: [],
+      content: [
+        {
+          type: "text",
+          text: `Screenshot saved to ${path}`,
+        },
+      ],
       structuredContent: {
         path,
       },
