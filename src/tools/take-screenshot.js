@@ -13,7 +13,7 @@ export const takeScreenshotTool = {
     "Capture a screenshot of the shared screen via browser screen sharing",
   outputSchema,
   handler: async function () {
-    const dataUrl = await this.component.captureScreenshot();
+    const { dataUrl } = await this.component.captureScreenshot();
 
     const { path } = await this.server.saveScreenshot({ dataUrl });
 
@@ -153,15 +153,13 @@ export const takeScreenshotTool = {
 
         const dataUrl = await new Promise((resolve) => {
           const reader = new FileReader();
-          reader.addEventListener(
-            "load",
-            () => resolve(reader.result),
-            { once: true }
-          );
+          reader.addEventListener("load", () => resolve(reader.result), {
+            once: true,
+          });
           reader.readAsDataURL(blob);
         });
 
-        return dataUrl;
+        return { dataUrl };
       }
     }
 
