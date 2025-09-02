@@ -10,7 +10,7 @@ export const readConsoleTool: McpTool<typeof inputSchema> = {
   name: "read-console",
   description: "Read the console log",
   inputSchema,
-  handler: async (args) => {
+  handler: async ({ level }) => {
     return {
       content: [
         {

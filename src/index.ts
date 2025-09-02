@@ -1,7 +1,10 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 
 import type { Plugin, ViteDevServer } from "vite";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  McpServer,
+  type ToolCallback,
+} from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
@@ -17,9 +20,7 @@ export interface McpTool<
   description: string;
   inputSchema?: Input;
   outputSchema?: Output;
-  handler: (
-    args?: z.objectOutputType<z.ZodRawShape, z.ZodTypeAny>
-  ) => Promise<CallToolResult>;
+  handler: ToolCallback<Input>;
   component?: (Base: typeof HTMLElement) => CustomElementConstructor;
   server?: {
     [method: string]: (args: {
