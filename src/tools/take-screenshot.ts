@@ -28,6 +28,14 @@ interface ToolContext {
   };
 }
 
+type ScreenShareOverlayConstructor = new (...args: any[]) => HTMLElement & {
+  captureScreenshot(): Promise<CaptureScreenshotResult>;
+};
+
+type ComponentMixin = <T extends new (...args: any[]) => HTMLElement>(
+  Base: T
+) => T & ScreenShareOverlayConstructor;
+
 export const takeScreenshotTool = {
   name: "take-screenshot",
   description:
@@ -50,7 +58,7 @@ export const takeScreenshotTool = {
       },
     };
   },
-  component: <T extends new (...args: any[]) => HTMLElement>(Base: T) => {
+  component: <T extends new (...args: any[]) => HTMLElement>(Base: T): T & ScreenShareOverlayConstructor => {
     class ScreenShareOverlay extends Base {
       #mediaStream: MediaStream | null = null;
       #video: HTMLVideoElement | null = null;
@@ -195,7 +203,7 @@ export const takeScreenshotTool = {
       }
     }
 
-    return ScreenShareOverlay;
+    return ScreenShareOverlay as T & ScreenShareOverlayConstructor;
   },
   server: {
     saveScreenshot: async (
