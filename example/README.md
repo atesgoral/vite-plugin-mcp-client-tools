@@ -66,3 +66,9 @@ curl \
 ```
 
 Or use the `npm run test-read-console` or `npm run test-take-screenshot` commands.
+
+## Add the MCP Server to Claude Code
+
+```sh
+claude mcp add example-vite-client-tools --transport http http://localhost:3000/mcp
+```
