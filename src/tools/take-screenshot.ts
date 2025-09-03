@@ -32,33 +32,38 @@ type ScreenShareOverlayConstructor = new (...args: any[]) => HTMLElement & {
   captureScreenshot(): Promise<CaptureScreenshotResult>;
 };
 
-type ComponentMixin = <T extends new (...args: any[]) => HTMLElement>(
-  Base: T
-) => T & ScreenShareOverlayConstructor;
-
 export const takeScreenshotTool = {
   name: "take-screenshot",
   description:
     "Capture a screenshot of the shared screen via browser screen sharing",
-  outputSchema,
+  // outputSchema,
   handler: async function (this: ToolContext) {
     const { dataUrl } = await this.component.captureScreenshot();
 
-    const { path } = await this.server.saveScreenshot({ dataUrl });
+    // const { path } = await this.server.saveScreenshot({ dataUrl });
+
+    const base64Data = dataUrl.split(",")[1];
 
     return {
       content: [
         {
-          type: "text" as const,
-          text: `Screenshot saved to ${path}`,
+          type: "text",
+          text: "Screenshot of current browser tab captured",
+        },
+        {
+          type: "image",
+          mimeType: "image/jpeg",
+          data: base64Data,
         },
       ],
-      structuredContent: {
-        path,
-      },
+      // structuredContent: {
+      //   path,
+      // },
     };
   },
-  component: <T extends new (...args: any[]) => HTMLElement>(Base: T): T & ScreenShareOverlayConstructor => {
+  component: <T extends new (...args: any[]) => HTMLElement>(
+    Base: T
+  ): T & ScreenShareOverlayConstructor => {
     class ScreenShareOverlay extends Base {
       #mediaStream: MediaStream | null = null;
       #video: HTMLVideoElement | null = null;
