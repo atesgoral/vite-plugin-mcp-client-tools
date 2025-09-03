@@ -7,12 +7,33 @@ const outputSchema = {
   path: z.string(),
 };
 
+interface CaptureScreenshotResult {
+  dataUrl: string;
+}
+
+interface SaveScreenshotArgs {
+  dataUrl: string;
+}
+
+interface SaveScreenshotResult {
+  path: string;
+}
+
+interface ToolContext {
+  component: {
+    captureScreenshot(): Promise<CaptureScreenshotResult>;
+  };
+  server: {
+    saveScreenshot(args: SaveScreenshotArgs): Promise<SaveScreenshotResult>;
+  };
+}
+
 export const takeScreenshotTool = {
   name: "take-screenshot",
   description:
     "Capture a screenshot of the shared screen via browser screen sharing",
   outputSchema,
-  handler: async function () {
+  handler: async function (this: ToolContext) {
     const { dataUrl } = await this.component.captureScreenshot();
 
     const { path } = await this.server.saveScreenshot({ dataUrl });
@@ -20,7 +41,7 @@ export const takeScreenshotTool = {
     return {
       content: [
         {
-          type: "text",
+          type: "text" as const,
           text: `Screenshot saved to ${path}`,
         },
       ],
@@ -29,10 +50,10 @@ export const takeScreenshotTool = {
       },
     };
   },
-  component: (Base) => {
+  component: <T extends new (...args: any[]) => HTMLElement>(Base: T) => {
     class ScreenShareOverlay extends Base {
-      #mediaStream = null;
-      #video = null;
+      #mediaStream: MediaStream | null = null;
+      #video: HTMLVideoElement | null = null;
 
       connectedCallback() {
         const shadow = this.attachShadow({ mode: "open" });
@@ -89,7 +110,7 @@ export const takeScreenshotTool = {
           preferCurrentTab: true,
           selfBrowserSurface: "include",
           surfaceSwitching: "exclude",
-        });
+        } as DisplayMediaStreamOptions);
 
         mediaStream.getTracks().forEach((track) => {
           track.addEventListener(
@@ -110,8 +131,10 @@ export const takeScreenshotTool = {
         this.#mediaStream = mediaStream;
         this.#video = video;
 
-        await new Promise((resolve, reject) => {
-          video.addEventListener("loadedmetadata", resolve, { once: true });
+        await new Promise<void>((resolve, reject) => {
+          video.addEventListener("loadedmetadata", () => resolve(), {
+            once: true,
+          });
           video.addEventListener(
             "error",
             (e) => reject(new Error(`Video error: ${e}`)),
@@ -138,7 +161,7 @@ export const takeScreenshotTool = {
         }
       }
 
-      async captureScreenshot() {
+      async captureScreenshot(): Promise<CaptureScreenshotResult> {
         if (!this.#video) throw new Error("Not capturing");
 
         const canvas = new OffscreenCanvas(
@@ -156,11 +179,15 @@ export const takeScreenshotTool = {
           quality: 0.2,
         });
 
-        const dataUrl = await new Promise((resolve) => {
+        const dataUrl = await new Promise<string>((resolve) => {
           const reader = new FileReader();
-          reader.addEventListener("load", () => resolve(reader.result), {
-            once: true,
-          });
+          reader.addEventListener(
+            "load",
+            () => resolve(reader.result as string),
+            {
+              once: true,
+            }
+          );
           reader.readAsDataURL(blob);
         });
 
@@ -171,16 +198,21 @@ export const takeScreenshotTool = {
     return ScreenShareOverlay;
   },
   server: {
-    saveScreenshot: async (args) => {
+    saveScreenshot: async (
+      args: SaveScreenshotArgs
+    ): Promise<SaveScreenshotResult> => {
       const dataUrl = args.dataUrl;
 
       const matches = /^data:image\/(?<ext>\w+);base64,(?<base64Data>.+)$/.exec(
         String(dataUrl)
       );
 
-      if (!matches) throw new Error("Invalid image data URL format");
+      if (!matches?.groups) throw new Error("Invalid image data URL format");
 
-      const { ext, base64Data } = matches.groups;
+      const { ext, base64Data } = matches.groups as {
+        ext: string;
+        base64Data: string;
+      };
 
       const buffer = Buffer.from(base64Data, "base64");
 
