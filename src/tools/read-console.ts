@@ -99,6 +99,8 @@ export const readConsoleTool = {
       #isConsoleIntercepted = false;
 
       connectedCallback() {
+        // No visual UI - component exists only to intercept console
+        this.style.display = 'none';
         this.#interceptConsole();
       }
 

@@ -67,6 +67,9 @@ export const takeScreenshotTool = {
     class ScreenShareOverlay extends Base {
       #mediaStream: MediaStream | null = null;
       #video: HTMLVideoElement | null = null;
+      #capturePromise: Promise<void> | null = null;
+      #captureResolve: (() => void) | null = null;
+      #captureReject: ((error: Error) => void) | null = null;
 
       connectedCallback() {
         const shadow = this.attachShadow({ mode: "open" });
@@ -74,45 +77,193 @@ export const takeScreenshotTool = {
         const style = document.createElement("style");
 
         style.textContent = `
-          button {
-            background: #000;
-            color: #eee;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 8px 12px;
-            cursor: pointer;
+          :host {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
           }
 
-          button:hover {
-            background: #111;
+          :host([visible]) {
+            display: flex;
+          }
+
+          .backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+          }
+
+          .modal {
+            position: relative;
+            background: #fff;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          }
+
+          .modal h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #111;
+          }
+
+          .modal p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #555;
+          }
+
+          .buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+          }
+
+          button {
+            font-size: 16px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+          }
+
+          .primary {
+            background: #000;
             color: #fff;
+          }
+
+          .primary:hover {
+            background: #222;
+          }
+
+          .secondary {
+            background: #eee;
+            color: #333;
+          }
+
+          .secondary:hover {
+            background: #ddd;
           }
         `;
 
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = "Start Screen Capture";
-        button.disabled = false;
-        button.addEventListener("click", () => this.#toggleScreenCapture());
+        const backdrop = document.createElement("div");
+        backdrop.className = "backdrop";
+        backdrop.addEventListener("click", () => this.#cancelCapture());
+
+        const modal = document.createElement("div");
+        modal.className = "modal";
+
+        const title = document.createElement("h2");
+        title.textContent = "Screen Capture Required";
+
+        const description = document.createElement("p");
+        description.textContent = "To take screenshots, this tool needs permission to capture your screen. Click 'Start Capture' to select which screen or window to share.";
+
+        const buttons = document.createElement("div");
+        buttons.className = "buttons";
+
+        const cancelButton = document.createElement("button");
+        cancelButton.type = "button";
+        cancelButton.className = "secondary";
+        cancelButton.textContent = "Cancel";
+        cancelButton.addEventListener("click", () => this.#cancelCapture());
+
+        const startButton = document.createElement("button");
+        startButton.type = "button";
+        startButton.className = "primary";
+        startButton.textContent = "Start Capture";
+        startButton.addEventListener("click", () => this.#startCapture());
+
+        buttons.appendChild(cancelButton);
+        buttons.appendChild(startButton);
+
+        modal.appendChild(title);
+        modal.appendChild(description);
+        modal.appendChild(buttons);
 
         shadow.appendChild(style);
-        shadow.appendChild(button);
+        shadow.appendChild(backdrop);
+        shadow.appendChild(modal);
       }
 
-      async #toggleScreenCapture() {
+      #showModal() {
+        this.setAttribute("visible", "");
+        document.addEventListener("keydown", this.#onKeyDown);
+
+        // Create a new promise that will be resolved/rejected by user action
+        this.#capturePromise = new Promise((resolve, reject) => {
+          this.#captureResolve = resolve;
+          this.#captureReject = reject;
+        });
+
+        return this.#capturePromise;
+      }
+
+      #hideModal() {
+        this.removeAttribute("visible");
+        document.removeEventListener("keydown", this.#onKeyDown);
+      }
+
+      #onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          this.#cancelCapture();
+        }
+      };
+
+      #cancelCapture() {
+        this.#hideModal();
+        if (this.#captureReject) {
+          this.#captureReject(new Error("Screen capture cancelled by user"));
+          this.#captureResolve = null;
+          this.#captureReject = null;
+        }
+      }
+
+      async #startCapture() {
         try {
           await this.#startScreenCapture();
+          this.#hideModal();
+          if (this.#captureResolve) {
+            this.#captureResolve();
+            this.#captureResolve = null;
+            this.#captureReject = null;
+          }
         } catch (error) {
-          if (
-            error instanceof DOMException &&
-            error.name === "NotAllowedError"
-          ) {
-            console.log("Screen capture permission denied by user");
-          } else {
-            console.error(error);
+          this.#hideModal();
+          if (this.#captureReject) {
+            if (
+              error instanceof DOMException &&
+              error.name === "NotAllowedError"
+            ) {
+              this.#captureReject(new Error("Screen capture permission denied by user"));
+            } else {
+              this.#captureReject(error instanceof Error ? error : new Error(String(error)));
+            }
+            this.#captureResolve = null;
+            this.#captureReject = null;
           }
         }
       }
+
 
       async #startScreenCapture() {
         const mediaStream = await navigator.mediaDevices.getDisplayMedia({
@@ -175,7 +326,15 @@ export const takeScreenshotTool = {
       }
 
       async captureScreenshot(): Promise<CaptureScreenshotResult> {
-        if (!this.#video) throw new Error("Screen capture not started. Please ask the user to click the 'Start Screen Capture' button in the top-right corner of the browser window first.");
+        if (!this.#video) {
+          // Show the modal and wait for user action
+          await this.#showModal();
+        }
+
+        // After modal interaction, video should be set
+        if (!this.#video) {
+          throw new Error("Screen capture not available");
+        }
 
         const canvas = new OffscreenCanvas(
           this.#video.videoWidth,

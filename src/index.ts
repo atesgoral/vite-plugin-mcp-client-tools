@@ -104,39 +104,6 @@ export function viteMcpPlugin({
     return server;
   };
 
-  const createOverlayContainer = (Base: typeof HTMLElement) => {
-    class OverlayContainer extends Base {
-      connectedCallback() {
-        const shadow = this.attachShadow({ mode: "open" });
-
-        const style = document.createElement("style");
-
-        style.textContent = `
-          #container {
-            position: absolute;
-            top: 0;
-            right: 0;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.25);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.25);
-            border-left: 1px solid rgba(255, 255, 255, 0.25);
-            border-bottom-left-radius: 10px;
-          }
-        `;
-
-        const div = document.createElement("div");
-        div.setAttribute("id", "container");
-
-        const slot = document.createElement("slot");
-        div.appendChild(slot);
-
-        shadow.appendChild(style);
-        shadow.appendChild(div);
-      }
-    }
-
-    return OverlayContainer;
-  };
 
   return {
     name: "Model Context Protocol Plugin",
@@ -299,11 +266,8 @@ export function viteMcpPlugin({
         const toolsWithComponents = tools.filter(
           ({ component }) => component instanceof Function
         );
-        const webComponentFactories = [
-          { name: "overlay-container", component: createOverlayContainer },
-          ...toolsWithComponents,
-        ];
-        const webComponentRegistrations = webComponentFactories.map(
+
+        const webComponentRegistrations = toolsWithComponents.map(
           ({ name, component }) => `
             customElements.define(
               ${JSON.stringify(name + "-element")},
@@ -328,13 +292,11 @@ export function viteMcpPlugin({
                   children: registration,
                   injectTo: "head-prepend" as const,
                 })),
-                {
-                  tag: "overlay-container-element",
-                  children: toolsWithComponents.map(({ name }) => ({
-                    tag: name + "-element",
-                  })),
+                // Inject tool components directly into body
+                ...toolsWithComponents.map(({ name }) => ({
+                  tag: name + "-element",
                   injectTo: "body" as const,
-                },
+                })),
               ]
             : []),
         ];
