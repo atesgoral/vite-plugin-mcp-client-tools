@@ -81,26 +81,54 @@ Each tool can have three parts:
    - Intercepts console.log/warn/error/info
    - Returns formatted logs with timestamps
 
+## Package Publishing
+
+This package uses automated publishing via GitHub Actions with npm trusted publishing (OIDC).
+
+### Publishing a New Version
+
+1. **Bump version and tag** (choose one):
+   ```bash
+   npm version patch  # 1.0.0 -> 1.0.1
+   npm version minor  # 1.0.0 -> 1.1.0
+   npm version major  # 1.0.0 -> 2.0.0
+   ```
+   This automatically:
+   - Updates package.json
+   - Creates a git commit
+   - Creates a git tag (v1.0.1, etc.)
+
+2. **Push commit and tag**:
+   ```bash
+   git push && git push --tags
+   ```
+
+3. **Automatic publish**: GitHub Actions will automatically:
+   - Build the package
+   - Publish to npm with provenance
+   - No manual `npm publish` needed!
+
+### How It Works
+
+- Workflow: `.github/workflows/npm-publish.yml`
+- Triggers on tags matching `v*` (e.g., `v1.0.0`)
+- Uses npm trusted publishing with OIDC (no npm token in GitHub secrets)
+- Generates cryptographic provenance automatically
+
+### First-Time Setup (Already Done)
+
+The trusted publisher is configured on npmjs.com:
+- Package: `vite-plugin-mcp-client-tools`
+- Publisher: GitHub Actions
+- Repository: `atesgoral/vite-plugin-mcp-client-tools`
+- Workflow: `npm-publish.yml`
+
 ## TODO List
-
-### Screenshot Tool Enhancements
-
-- [ ] Add JPEG quality option to modal
-  - Slider or input field
-  - Default: 0.2 (current hardcoded value)
-  - Range: 0.0 to 1.0
-
-- [ ] Add "Save to disk" checkbox to modal
-  - Default: OFF (unchecked)
-  - When enabled, save via server.saveScreenshot()
-  - Show saved file path in tool response
-  - Currently server code exists but is unused
 
 ### General Improvements
 
 - [ ] Consider making the 2s overlay delay configurable
 - [ ] Add tests for tool handlers
-- [ ] Document how to create new tools in README
 
 ## Common Pitfalls
 
