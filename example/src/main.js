@@ -13,6 +13,13 @@ function render() {
 
 function increment() {
   count++;
+  console.log(`Counter incremented to: ${count}`);
+  if (count % 5 === 0) {
+    console.warn(`Counter reached milestone: ${count}`);
+  }
+  if (count > 10) {
+    console.error("Counter is getting too high!");
+  }
   render();
 }
 
@@ -20,6 +27,7 @@ function increment() {
 window.increment = increment;
 
 // Initial render
+console.info("App started successfully!");
 render();
 
 // HMR update handling
