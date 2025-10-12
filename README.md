@@ -1,5 +1,7 @@
 # vite-plugin-mcp-client-tools
 
+Pluggable Vite MCP plugin that brings client-side tools to your existing Vite setup.
+
 Give your coding agent eyes and ears for your Vite app during development.
 
 ## Why This Plugin?
@@ -60,7 +62,7 @@ Captures a screenshot of the current browser tab.
 
 **How It Works:**
 - On first use, displays a modal asking for screen sharing permission
-- Uses the browser's native screen capture API (Chrome currently requires sharing the current tab only)
+- Uses the browser's native screen capture API
 - Subsequent screenshots are instant—no modal, no delay
 - Waits 2 seconds after initial capture to let Chrome's dimension overlay fade
 
