@@ -176,7 +176,7 @@ export const takeScreenshotTool = {
         title.textContent = "Screen Capture Required";
 
         const description = document.createElement("p");
-        description.textContent = "To take screenshots, this tool needs permission to capture your screen. Click 'Start Capture' to select which screen or window to share.";
+        description.textContent = "To take screenshots, this tool needs permission to capture your screen. Click 'Start Capture' to share the current tab.";
 
         const buttons = document.createElement("div");
         buttons.className = "buttons";
