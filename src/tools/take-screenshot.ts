@@ -240,8 +240,13 @@ export const takeScreenshotTool = {
 
       async #startCapture() {
         try {
-          await this.#startScreenCapture();
+          // Hide modal first
           this.#hideModal();
+          // Wait for next frame to ensure modal is hidden before starting capture
+          await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
+          await this.#startScreenCapture();
+          // Wait 2s for browser's dimension overlay to fade away
+          await new Promise(resolve => setTimeout(resolve, 2000));
           if (this.#captureResolve) {
             this.#captureResolve();
             this.#captureResolve = null;
