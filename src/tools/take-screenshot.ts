@@ -9,6 +9,8 @@ const outputSchema = {
 
 interface CaptureScreenshotResult {
   dataUrl: string;
+  quality: number;
+  saveToDisk: boolean;
 }
 
 interface SaveScreenshotArgs {
@@ -38,17 +40,25 @@ export const takeScreenshotTool = {
     "Capture a screenshot of the shared screen via browser screen sharing",
   // outputSchema,
   handler: async function (this: ToolContext) {
-    const { dataUrl } = await this.component.captureScreenshot();
-
-    // const { path } = await this.server.saveScreenshot({ dataUrl });
+    const { dataUrl, quality, saveToDisk } = await this.component.captureScreenshot();
 
     const base64Data = dataUrl.split(",")[1];
+
+    let savedPath: string | undefined;
+    if (saveToDisk) {
+      const { path } = await this.server.saveScreenshot({ dataUrl });
+      savedPath = path;
+    }
+
+    const textContent = savedPath
+      ? `Screenshot of current browser tab captured (quality: ${quality}, saved to: ${savedPath})`
+      : `Screenshot of current browser tab captured (quality: ${quality})`;
 
     return {
       content: [
         {
           type: "text",
-          text: "Screenshot of current browser tab captured",
+          text: textContent,
         },
         {
           type: "image",
@@ -56,9 +66,6 @@ export const takeScreenshotTool = {
           data: base64Data,
         },
       ],
-      // structuredContent: {
-      //   path,
-      // },
     };
   },
   component: <T extends new (...args: any[]) => HTMLElement>(
@@ -70,6 +77,8 @@ export const takeScreenshotTool = {
       #capturePromise: Promise<void> | null = null;
       #captureResolve: (() => void) | null = null;
       #captureReject: ((error: Error) => void) | null = null;
+      #qualitySlider: HTMLInputElement | null = null;
+      #saveToDiskCheckbox: HTMLInputElement | null = null;
 
       connectedCallback() {
         const shadow = this.attachShadow({ mode: "open" });
@@ -163,6 +172,152 @@ export const takeScreenshotTool = {
           .secondary:hover {
             background: #ddd;
           }
+
+          .options {
+            border-top: 1px solid #e0e0e0;
+            padding-top: 16px;
+          }
+
+          .options-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            padding: 8px 0;
+          }
+
+          .options-header:hover {
+            opacity: 0.7;
+          }
+
+          .options-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+          }
+
+          .reset-button {
+            align-self: flex-start;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #666;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+          }
+
+          .reset-button:hover {
+            background: #f5f5f5;
+            border-color: #ccc;
+          }
+
+          .chevron {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.2s;
+          }
+
+          .chevron.expanded {
+            transform: rotate(180deg);
+          }
+
+          .options-content {
+            display: none;
+            padding-top: 16px;
+            gap: 16px;
+            flex-direction: column;
+          }
+
+          .options-content.expanded {
+            display: flex;
+          }
+
+          .option-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          .option-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .option-description {
+            font-size: 12px;
+            color: #666;
+          }
+
+          .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+
+          input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+          }
+
+          input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #000;
+            border-radius: 50%;
+            cursor: pointer;
+          }
+
+          input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #000;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+          }
+
+          .slider-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            min-width: 40px;
+            text-align: right;
+          }
+
+          .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #000;
+          }
+
+          .checkbox-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+            user-select: none;
+          }
         `;
 
         const backdrop = document.createElement("div");
@@ -177,6 +332,130 @@ export const takeScreenshotTool = {
 
         const description = document.createElement("p");
         description.textContent = "To take screenshots, this tool needs permission to capture your screen. Click 'Start Capture' to share the current tab.";
+
+        // Options section
+        const options = document.createElement("div");
+        options.className = "options";
+
+        const optionsHeader = document.createElement("div");
+        optionsHeader.className = "options-header";
+
+        const optionsTitle = document.createElement("div");
+        optionsTitle.className = "options-title";
+        optionsTitle.textContent = "Options";
+
+        const chevron = document.createElement("div");
+        chevron.className = "chevron";
+        chevron.innerHTML = `<svg viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>`;
+
+        const optionsContent = document.createElement("div");
+        optionsContent.className = "options-content";
+
+        // JPEG Quality slider
+        const qualityRow = document.createElement("div");
+        qualityRow.className = "option-row";
+
+        const qualityLabel = document.createElement("div");
+        qualityLabel.className = "option-label";
+        qualityLabel.textContent = "JPEG Quality";
+
+        const qualityDescription = document.createElement("div");
+        qualityDescription.className = "option-description";
+        qualityDescription.textContent = "Lower quality produces smaller files";
+
+        const sliderContainer = document.createElement("div");
+        sliderContainer.className = "slider-container";
+
+        const qualitySlider = document.createElement("input");
+        qualitySlider.type = "range";
+        qualitySlider.min = "0";
+        qualitySlider.max = "10";
+        qualitySlider.value = "2"; // Default 0.2
+        qualitySlider.step = "1";
+        this.#qualitySlider = qualitySlider;
+
+        const qualityValue = document.createElement("div");
+        qualityValue.className = "slider-value";
+        qualityValue.textContent = "0.2";
+
+        qualitySlider.addEventListener("input", (e) => {
+          const value = parseInt((e.target as HTMLInputElement).value);
+          qualityValue.textContent = (value / 10).toFixed(1);
+        });
+
+        sliderContainer.appendChild(qualitySlider);
+        sliderContainer.appendChild(qualityValue);
+
+        qualityRow.appendChild(qualityLabel);
+        qualityRow.appendChild(qualityDescription);
+        qualityRow.appendChild(sliderContainer);
+
+        // Save to disk checkbox
+        const saveToDiskRow = document.createElement("div");
+        saveToDiskRow.className = "option-row";
+
+        const saveToDiskLabel = document.createElement("div");
+        saveToDiskLabel.className = "option-label";
+        saveToDiskLabel.textContent = "Save to Disk";
+
+        const saveToDiskDescription = document.createElement("div");
+        saveToDiskDescription.className = "option-description";
+        saveToDiskDescription.textContent = "Also save screenshot to tmp/screenshots directory";
+
+        const checkboxContainer = document.createElement("div");
+        checkboxContainer.className = "checkbox-container";
+
+        const saveToDiskCheckbox = document.createElement("input");
+        saveToDiskCheckbox.type = "checkbox";
+        saveToDiskCheckbox.id = "save-to-disk-checkbox";
+        saveToDiskCheckbox.checked = false; // Default OFF
+        this.#saveToDiskCheckbox = saveToDiskCheckbox;
+
+        const checkboxLabel = document.createElement("label");
+        checkboxLabel.className = "checkbox-label";
+        checkboxLabel.htmlFor = "save-to-disk-checkbox";
+        checkboxLabel.textContent = "Enable file saving";
+
+        checkboxContainer.appendChild(saveToDiskCheckbox);
+        checkboxContainer.appendChild(checkboxLabel);
+
+        saveToDiskRow.appendChild(saveToDiskLabel);
+        saveToDiskRow.appendChild(saveToDiskDescription);
+        saveToDiskRow.appendChild(checkboxContainer);
+
+        // Reset button
+        const resetButton = document.createElement("button");
+        resetButton.type = "button";
+        resetButton.className = "reset-button";
+        resetButton.textContent = "Reset to Defaults";
+
+        // Reset button functionality
+        const resetToDefaults = () => {
+          qualitySlider.value = "2";
+          qualityValue.textContent = "0.2";
+          saveToDiskCheckbox.checked = false;
+        };
+
+        resetButton.addEventListener("click", () => {
+          resetToDefaults();
+        });
+
+        optionsContent.appendChild(qualityRow);
+        optionsContent.appendChild(saveToDiskRow);
+        optionsContent.appendChild(resetButton);
+
+        // Accordion toggle
+        optionsHeader.addEventListener("click", () => {
+          const isExpanded = optionsContent.classList.toggle("expanded");
+          chevron.classList.toggle("expanded", isExpanded);
+        });
+
+        optionsHeader.appendChild(optionsTitle);
+        optionsHeader.appendChild(chevron);
+        options.appendChild(optionsHeader);
+        options.appendChild(optionsContent);
 
         const buttons = document.createElement("div");
         buttons.className = "buttons";
@@ -198,6 +477,7 @@ export const takeScreenshotTool = {
 
         modal.appendChild(title);
         modal.appendChild(description);
+        modal.appendChild(options);
         modal.appendChild(buttons);
 
         shadow.appendChild(style);
@@ -341,6 +621,14 @@ export const takeScreenshotTool = {
           throw new Error("Screen capture not available");
         }
 
+        // Get quality value from slider (default to 0.2 if not set)
+        const quality = this.#qualitySlider
+          ? parseInt(this.#qualitySlider.value) / 10
+          : 0.2;
+
+        // Get save to disk checkbox value (default to false if not set)
+        const saveToDisk = this.#saveToDiskCheckbox?.checked ?? false;
+
         const canvas = new OffscreenCanvas(
           this.#video.videoWidth,
           this.#video.videoHeight
@@ -353,7 +641,7 @@ export const takeScreenshotTool = {
 
         const blob = await canvas.convertToBlob({
           type: "image/jpeg",
-          quality: 0.2,
+          quality,
         });
 
         const dataUrl = await new Promise<string>((resolve) => {
@@ -368,7 +656,7 @@ export const takeScreenshotTool = {
           reader.readAsDataURL(blob);
         });
 
-        return { dataUrl };
+        return { dataUrl, quality, saveToDisk };
       }
     }
 
