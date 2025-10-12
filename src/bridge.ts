@@ -92,16 +92,12 @@ export function mcpBridge(
             hot.send("mcp:tool-result", { id, result });
           })
           .catch((error: unknown) => {
-            console.error("Error calling tool", error);
-
             hot.send("mcp:tool-result", {
               id,
               error: error instanceof Error ? error.message : String(error),
             });
           });
       } catch (error) {
-        console.error("Error calling tool", error);
-
         hot.send("mcp:tool-result", {
           id,
           error: error instanceof Error ? error.message : String(error),

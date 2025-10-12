@@ -175,7 +175,7 @@ export const takeScreenshotTool = {
       }
 
       async captureScreenshot(): Promise<CaptureScreenshotResult> {
-        if (!this.#video) throw new Error("Not capturing");
+        if (!this.#video) throw new Error("Screen capture not started. Please ask the user to click the 'Start Screen Capture' button in the top-right corner of the browser window first.");
 
         const canvas = new OffscreenCanvas(
           this.#video.videoWidth,
