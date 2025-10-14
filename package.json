@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-mcp-client-tools",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Pluggable Vite MCP plugin",
   "type": "module",
   "main": "./dist/index.cjs",
