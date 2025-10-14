@@ -8,8 +8,8 @@ Give your coding agent eyes and ears for your Vite app during development.
 
 When developing a Vite app with HMR (Hot Module Replacement) using a coding agent, your agent is essentially working blind—it can't see what your app actually looks like in the browser or what's happening in the console. This leads to exchanges like:
 
-**Agent:** "Perfect! Now the button looks more modern!"
-**You:** "Actually, it's completely broken and there are errors in the console..."
+- **Agent:** "Perfect! Now the button looks more modern!"
+- **You:** "Actually, it's completely broken and there are errors in the console..."
 
 This plugin solves that problem by bringing browser visibility directly into your agent's workflow as MCP (Model Context Protocol) tools. It's **not** a separate service or additional setup—it's just part of your regular Vite development server.
 
@@ -37,7 +37,7 @@ npm install vite-plugin-mcp-client-tools
 Add the plugin to your `vite.config.js`:
 
 ```ts
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
 import { viteMcpPlugin } from "vite-plugin-mcp-client-tools";
 import { readConsoleTool } from "vite-plugin-mcp-client-tools/tools/read-console";
 import { takeScreenshotTool } from "vite-plugin-mcp-client-tools/tools/take-screenshot";
@@ -60,6 +60,7 @@ Then configure your MCP client (e.g., Claude Code, Cursor) to connect to the Vit
 Captures a screenshot of the current browser tab.
 
 **How It Works:**
+
 - On first use, displays a modal asking for screen sharing permission
 - Uses the browser's native screen capture API
 - Subsequent screenshots are instant—no modal, no delay
@@ -68,6 +69,7 @@ Captures a screenshot of the current browser tab.
 <img width="716" height="449" alt="Image" src="https://github.com/user-attachments/assets/ae4b1383-2243-4729-b273-8d87e7cd7209" />
 
 **Options:**
+
 - **JPEG Quality** (slider): 0.0 to 1.0 in 0.1 increments (default: 0.2)
   - Lower quality = smaller file sizes
   - Adjust based on your needs (detail vs. bandwidth)
@@ -76,11 +78,13 @@ Captures a screenshot of the current browser tab.
   - Useful for agents that want to reference saved files
 
 **Returns:**
+
 - Base64-encoded JPEG image
 - Quality value used
 - File path (if save-to-disk was enabled)
 
 **Example Response:**
+
 ```
 Screenshot of current browser tab captured (quality: 0.8, saved to: /path/to/screenshot.jpeg)
 ```
@@ -90,26 +94,42 @@ Screenshot of current browser tab captured (quality: 0.8, saved to: /path/to/scr
 Intercepts and returns browser console logs.
 
 **Features:**
+
 - Captures all log levels: `log`, `warn`, `error`, `info`
 - Preserves log order and timestamps
 - Non-visual component (no UI impact)
 - Optional `tail` parameter to limit results (like `tail -n`)
 
 **Parameters:**
+
 - `tail` (optional): Number of most recent entries to return
 
 **Returns:**
+
 - Array of console entries with:
   - Timestamp (Swedish locale format: YYYY-MM-DD HH:mm:ss)
   - Log level (info/log/warn/error)
   - Message content
 
 **Example:**
+
 ```json
 [
-  {"timestamp": "2025-10-12 16:45:23", "level": "info", "message": "App started successfully!"},
-  {"timestamp": "2025-10-12 16:45:25", "level": "log", "message": "Counter incremented to: 1"},
-  {"timestamp": "2025-10-12 16:45:30", "level": "warn", "message": "Counter reached milestone: 5"}
+  {
+    "timestamp": "2025-10-12 16:45:23",
+    "level": "info",
+    "message": "App started successfully!"
+  },
+  {
+    "timestamp": "2025-10-12 16:45:25",
+    "level": "log",
+    "message": "Counter incremented to: 1"
+  },
+  {
+    "timestamp": "2025-10-12 16:45:30",
+    "level": "warn",
+    "message": "Counter reached milestone: 5"
+  }
 ]
 ```
 
@@ -118,6 +138,7 @@ Intercepts and returns browser console logs.
 Beyond the standard MCP tool definition components (`name`, `description`, `inputSchema`, and `outputSchema`), each tool consists of:
 
 1. **Handler**: A function that implements the tool's core logic. The handler receives:
+
    - `this.component`: The DOM node for the tool's WebComponent (if defined)
    - `this.server`: A Proxy that lets the tool remote-call its server-side methods (if defined)
 
@@ -126,6 +147,7 @@ Beyond the standard MCP tool definition components (`name`, `description`, `inpu
 3. **Server methods** (optional): A hash of helper methods that get mounted on the Vite server, namespaced by the tool's name. These are Node.js-side utilities (e.g., file saving for screenshots).
 
 The plugin:
+
 - Exposes an MCP server endpoint at `/mcp`
 - Injects tool components into the page as custom web components
 - Uses Vite's HMR WebSocket connection for bi-directional RPC between the browser and server
@@ -137,6 +159,7 @@ See `AGENTS.md` for detailed information about the architecture and creating you
 ## Example Project
 
 The `example/` directory contains a minimal Vite app demonstrating both tools:
+
 - Counter app with console logging at different levels
 - Pre-configured with this plugin and both tools
 - Ready to test with your coding agent
@@ -159,6 +182,7 @@ npm run dev
 ```
 
 **Important:** Vite plugin code does not support HMR. After making changes to the plugin source:
+
 1. Run `npm run build`
 2. Kill and restart the dev server
 3. Reload the browser page

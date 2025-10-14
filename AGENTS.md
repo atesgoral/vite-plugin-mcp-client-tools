@@ -11,6 +11,7 @@ This is a Vite plugin that enables browser-based MCP (Model Context Protocol) to
 ### Setting Up for Development
 
 1. **Add this MCP server to your configuration** - The coding agent should have access to the example app's MCP server to test tools during development:
+
    - Server endpoint: `http://localhost:3000/mcp` (when dev server is running)
    - This gives you live access to test the tools you're building
 
@@ -35,10 +36,12 @@ cd example && npm run dev
 ### Important: HMR Limitations
 
 **Plugin code does NOT hot-reload!** When you modify:
+
 - Tool definitions (`src/tools/*.ts`)
 - Plugin code (`src/index.ts`, `src/bridge.ts`)
 
 You must:
+
 1. Run `npm run build`
 2. **Restart the Vite dev server** (kill and restart `cd example && npm run dev`)
 3. **Reload the browser page** at `http://localhost:3000`
@@ -59,6 +62,7 @@ Only then will the serialized tool component code be updated in the browser.
 Beyond the standard MCP tool definition components (`name`, `description`, `inputSchema`, and `outputSchema`), each tool can have three parts:
 
 1. **Handler** (required): A function that implements the tool's core logic. The handler receives:
+
    - `this.component`: The DOM node for the tool's WebComponent (if defined)
    - `this.server`: A Proxy that lets the tool remote-call its server-side methods (if defined)
 
@@ -76,6 +80,7 @@ Beyond the standard MCP tool definition components (`name`, `description`, `inpu
 ### Current Tools
 
 1. **take-screenshot**: Captures browser tab via screen sharing
+
    - Shows modal when screen capture not active
    - Modal waits for user interaction (async)
    - 2s delay after starting capture to avoid browser overlays
@@ -92,17 +97,21 @@ This package uses automated publishing via GitHub Actions with npm trusted publi
 ### Publishing a New Version
 
 1. **Bump version and tag** (choose one):
+
    ```bash
    npm version patch  # 1.0.0 -> 1.0.1
    npm version minor  # 1.0.0 -> 1.1.0
    npm version major  # 1.0.0 -> 2.0.0
    ```
+
    This automatically:
+
    - Updates package.json
    - Creates a git commit
    - Creates a git tag (v1.0.1, etc.)
 
 2. **Push commit and tag**:
+
    ```bash
    git push && git push --tags
    ```
@@ -122,6 +131,7 @@ This package uses automated publishing via GitHub Actions with npm trusted publi
 ### First-Time Setup (Already Done)
 
 The trusted publisher is configured on npmjs.com:
+
 - Package: `vite-plugin-mcp-client-tools`
 - Publisher: GitHub Actions
 - Repository: `atesgoral/vite-plugin-mcp-client-tools`
