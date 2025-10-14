@@ -66,6 +66,8 @@ Captures a screenshot of the current browser tab.
 - Subsequent screenshots are instant—no modal, no delay
 - Waits 2 seconds after initial capture to let Chrome's dimension overlay fade
 
+<img width="716" height="449" alt="Image" src="https://github.com/user-attachments/assets/ae4b1383-2243-4729-b273-8d87e7cd7209" />
+
 **Options:**
 - **JPEG Quality** (slider): 0.0 to 1.0 in 0.1 increments (default: 0.2)
   - Lower quality = smaller file sizes
