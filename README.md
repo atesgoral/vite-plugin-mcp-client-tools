@@ -13,12 +13,11 @@ When developing a Vite app with HMR (Hot Module Replacement) using a coding agen
 
 This plugin solves that problem by bringing browser visibility directly into your agent's workflow as MCP (Model Context Protocol) tools. It's **not** a separate service or additional setup—it's just part of your regular Vite development server.
 
-### Alternatives
+### What Makes This Different?
 
-- **Cursor** has a built-in browser control feature
-- **Chrome DevTools** team released an MCP server for browser automation
+Other solutions for giving coding agents browser visibility typically involve running separate browser instances or automation services (like Playwright or Puppeteer-based MCP servers, or IDE-specific browser control features).
 
-Both require running additional services outside your Vite setup. The magic of this plugin is that it's **seamlessly integrated** into your existing Vite HMR workflow—just add it to your `vite.config.js` and you're done.
+This plugin takes a different approach: it's **seamlessly integrated** into your existing Vite development workflow. The browser you're already using for HMR becomes the observation point—no additional setup, no separate processes to manage. Just add it to your `vite.config.js` and the tools are immediately available to your agent.
 
 ## Features
 
@@ -116,16 +115,20 @@ Intercepts and returns browser console logs.
 
 ## Tool Architecture
 
-Each tool consists of three optional parts:
+Beyond the standard MCP tool definition components (`name`, `description`, `inputSchema`, and `outputSchema`), each tool consists of:
 
-1. **Handler** (server-side): Processes tool calls, coordinates between client and server
-2. **Component** (client-side): Web component injected into the browser, provides UI and client-side logic
-3. **Server methods**: Node.js-side utilities (e.g., file saving for screenshots)
+1. **Handler**: A function that implements the tool's core logic. The handler receives:
+   - `this.component`: The DOM node for the tool's WebComponent (if defined)
+   - `this.server`: A Proxy that lets the tool remote-call its server-side methods (if defined)
 
-Tools are registered with the plugin via the `tools` array. The plugin:
+2. **Component** (optional): A factory function for a WebComponent that gets mounted on the document's body. Useful for tools that require user interaction or configurability (e.g., the screenshot tool's quality settings).
+
+3. **Server methods** (optional): A hash of helper methods that get mounted on the Vite server, namespaced by the tool's name. These are Node.js-side utilities (e.g., file saving for screenshots).
+
+The plugin:
 - Exposes an MCP server endpoint at `/mcp`
 - Injects tool components into the page as custom web components
-- Provides a bridge for communication between browser and MCP server
+- Uses Vite's HMR WebSocket connection for bi-directional RPC between the browser and server
 
 ### Creating Custom Tools
 

@@ -56,11 +56,15 @@ Only then will the serialized tool component code be updated in the browser.
 
 ### Tool Structure
 
-Each tool can have three parts:
+Beyond the standard MCP tool definition components (`name`, `description`, `inputSchema`, and `outputSchema`), each tool can have three parts:
 
-1. **Handler** (required): Server-side logic that executes when tool is called
-2. **Component** (optional): Browser web component for UI (if tool needs UI)
-3. **Server methods** (optional): Node.js methods the browser component can call
+1. **Handler** (required): A function that implements the tool's core logic. The handler receives:
+   - `this.component`: The DOM node for the tool's WebComponent (if defined)
+   - `this.server`: A Proxy that lets the tool remote-call its server-side methods (if defined)
+
+2. **Component** (optional): A factory function for a WebComponent that gets mounted on the document's body. Useful for tools that require user interaction or configurability.
+
+3. **Server methods** (optional): A hash of helper methods that get mounted on the Vite server, namespaced by the tool's name. These are Node.js-side utilities (e.g., file operations).
 
 ### Tool Components
 
