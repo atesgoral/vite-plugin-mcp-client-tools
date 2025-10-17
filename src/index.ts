@@ -104,6 +104,27 @@ export function viteMcpPlugin({
     return server;
   };
 
+  const toolsWithComponents = tools.filter(
+    ({ component }) => component instanceof Function
+  );
+
+  function registerAndAppendWebComponent(name: string, componentFactory: ComponentFactory) {
+    const elementName = name + "-element";
+
+    customElements.define(
+      elementName,
+      componentFactory(HTMLElement),
+    );
+
+    window.addEventListener('load', () => {
+      const node = document.createElement(elementName);
+      document.body.appendChild(node);
+    }, {once: true});
+  }
+
+  const webComponentRegistrations = toolsWithComponents.map(
+    ({ name, component }) => `(${registerAndAppendWebComponent})(${JSON.stringify(name)}, ${component})`
+  );
 
   return {
     name: "Model Context Protocol Plugin",
@@ -250,32 +271,28 @@ export function viteMcpPlugin({
         const serializedToolHandlers = tools
           .map(
             ({ name, handler }) =>
-              `[${JSON.stringify(name)}, {handler: ${handler.toString()}}]`
+              `[${JSON.stringify(name)}, {handler: ${handler}}]`
           )
           .join(",");
 
         return {
-          code: `(${mcpBridge.toString()})(import.meta.hot, new Map([${serializedToolHandlers}]), ${Deferred.toString()})`,
+          code: `(${mcpBridge})(import.meta.hot, new Map([${serializedToolHandlers}]), ${Deferred})`,
           map: null,
         };
       }
     },
+    transform(code, id, _options) {
+      if (!/src\/main\.js/.test(id)) {
+        return;
+      }
+
+      let prepend = '';
+      
+      return {code: prepend + code};
+    },
     transformIndexHtml: {
       order: "post",
       handler() {
-        const toolsWithComponents = tools.filter(
-          ({ component }) => component instanceof Function
-        );
-
-        const webComponentRegistrations = toolsWithComponents.map(
-          ({ name, component }) => `
-            customElements.define(
-              ${JSON.stringify(name + "-element")},
-              (${component})(HTMLElement),
-            )
-          `
-        );
-
         return [
           {
             tag: "script",
@@ -291,11 +308,6 @@ export function viteMcpPlugin({
                   tag: "script",
                   children: registration,
                   injectTo: "head-prepend" as const,
-                })),
-                // Inject tool components directly into body
-                ...toolsWithComponents.map(({ name }) => ({
-                  tag: name + "-element",
-                  injectTo: "body" as const,
                 })),
               ]
             : []),
