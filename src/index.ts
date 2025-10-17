@@ -9,6 +9,8 @@ import { z } from "zod";
 import { mcpBridge } from "./bridge.js";
 import { Deferred } from "./deferred.js";
 
+const MCP_BRIDGE_VIRTUAL_MODULE_URL = "/virtual:mcp-bridge";
+
 export type Handler = (
   this: { component?: HTMLElement | undefined; server: ServerMethods },
   input?: {
@@ -39,6 +41,7 @@ interface ViteMcpPluginOptions {
   name?: string;
   version?: string;
   tools?: McpTool[];
+  transformModule?: RegExp;
 }
 
 export function viteMcpPlugin({
@@ -46,6 +49,7 @@ export function viteMcpPlugin({
   name = "Vite MCP Server",
   version = "1.0.0",
   tools = [],
+  transformModule,
 }: ViteMcpPluginOptions = {}): Plugin {
   let viteServer: ViteDevServer | null = null;
 
@@ -108,22 +112,8 @@ export function viteMcpPlugin({
     ({ component }) => component instanceof Function
   );
 
-  function registerAndAppendWebComponent(name: string, componentFactory: ComponentFactory) {
-    const elementName = name + "-element";
-
-    customElements.define(
-      elementName,
-      componentFactory(HTMLElement),
-    );
-
-    window.addEventListener('load', () => {
-      const node = document.createElement(elementName);
-      document.body.appendChild(node);
-    }, {once: true});
-  }
-
   const webComponentRegistrations = toolsWithComponents.map(
-    ({ name, component }) => `(${registerAndAppendWebComponent})(${JSON.stringify(name)}, ${component})`
+    ({ name, component }) => `(${registerAndAppendWebComponent})(${JSON.stringify(name)}, ${component});`
   );
 
   return {
@@ -132,7 +122,7 @@ export function viteMcpPlugin({
       viteServer = server;
 
       server.ws.on("mcp:bridge-ready", () => {
-        console.log("🔌 MCP Bridge ready!");
+        log("🔌 MCP Bridge ready!");
       });
 
       server.ws.on("mcp:tool-result", (data) => {
@@ -140,7 +130,7 @@ export function viteMcpPlugin({
         const deferred = pendingToolCalls.get(id);
 
         if (!deferred) {
-          console.log(`Ignoring tool result for invocation ${id}`);
+          log(`Ignoring tool result for invocation ${id}`);
           return;
         }
 
@@ -165,9 +155,9 @@ export function viteMcpPlugin({
         if (!method) throw new Error(`Method not found: ${methodName}`);
 
         try {
-          console.log("calling server method", { methodName });
+          log("calling server method", { methodName });
           const result = await method(params);
-          console.log("result", result);
+          log("result", result);
           server.ws.send("mcp:tool-server-result", { id, result });
         } catch (error) {
           server.ws.send("mcp:tool-server-result", {
@@ -256,18 +246,18 @@ export function viteMcpPlugin({
         }
       );
 
-      console.log(
+      log(
         `🔌 MCP Server plugin loaded - endpoint available at ${endpoint}`
       );
-      console.log(`   Server: ${name} v${version}`);
+      log(`   Server: ${name} v${version}`);
     },
     resolveId(id) {
-      if (id === "/virtual:mcp-bridge") {
-        return "\0virtual:mcp-bridge";
+      if (id === MCP_BRIDGE_VIRTUAL_MODULE_URL) {
+        return `\0${MCP_BRIDGE_VIRTUAL_MODULE_URL}`;
       }
     },
     load(id) {
-      if (id === "\0virtual:mcp-bridge") {
+      if (id === `\0${MCP_BRIDGE_VIRTUAL_MODULE_URL}`) {
         const serializedToolHandlers = tools
           .map(
             ({ name, handler }) =>
@@ -276,29 +266,35 @@ export function viteMcpPlugin({
           .join(",");
 
         return {
-          code: `(${mcpBridge})(import.meta.hot, new Map([${serializedToolHandlers}]), ${Deferred})`,
+          code: `(${mcpBridge})(import.meta.hot, new Map([${serializedToolHandlers}]), ${Deferred});`,
           map: null,
         };
       }
     },
-    transform(code, id, _options) {
-      if (!/src\/main\.js/.test(id)) {
-        return;
-      }
+    ...(transformModule && {
+      transform: function (code, id, _options) {
+        if (!transformModule.test(id)) return;
 
-      let prepend = '';
-      
-      return {code: prepend + code};
-    },
+        log(`Transforming module ${id}`);
+
+        const prependedCode = webComponentRegistrations.join('\n') + code;
+        
+        return {code: prependedCode};
+      },
+    }),
     transformIndexHtml: {
       order: "post",
       handler() {
+        if (transformModule) return [];
+
+        log('Transforming index.html');
+
         return [
           {
             tag: "script",
             attrs: {
               type: "module",
-              src: "/virtual:mcp-bridge",
+              src: MCP_BRIDGE_VIRTUAL_MODULE_URL,
             },
             injectTo: "head-prepend",
           },
@@ -315,4 +311,22 @@ export function viteMcpPlugin({
       },
     },
   };
+}
+
+function log(...args: unknown[]) {
+  console.log('[MCP Client Tools Plugin]', ...args);
+}
+
+function registerAndAppendWebComponent(name: string, componentFactory: ComponentFactory) {
+  const elementName = name + "-element";
+
+  customElements.define(
+    elementName,
+    componentFactory(HTMLElement),
+  );
+
+  window.addEventListener('load', () => {
+    const node = document.createElement(elementName);
+    document.body.appendChild(node);
+  }, {once: true});
 }

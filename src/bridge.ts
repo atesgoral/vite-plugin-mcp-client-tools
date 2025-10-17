@@ -13,8 +13,12 @@ export function mcpBridge(
   tools: Map<string, Tool>,
   Deferred: typeof DeferredClass
 ) {
+  function log(...args: unknown[]) {
+    console.log('[MCP Client Tools Plugin]', ...args);
+  }
+  
   if (hot) {
-    console.log("🔌 MCP Bridge ready!");
+    log("🔌 MCP Bridge ready!");
 
     hot.send("mcp:bridge-ready");
 
@@ -35,7 +39,7 @@ export function mcpBridge(
       const deferred = pendingServerMethodCalls.get(id);
 
       if (!deferred) {
-        console.log(`Ignoring tool result for invocation ${id}`);
+        log(`Ignoring tool result for invocation ${id}`);
         return;
       }
 
@@ -108,6 +112,6 @@ export function mcpBridge(
     hot.on("mcp:tool-call", handleToolCall);
     hot.on("mcp:tool-server-result", handleServerMethodResult);
   } else {
-    console.log("MCP bridge not ready because HMR not available.");
+    log("MCP bridge not ready because HMR not available.");
   }
 }

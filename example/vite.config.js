@@ -6,6 +6,10 @@ import { takeScreenshotTool } from "vite-plugin-mcp-client-tools/tools/take-scre
 export default defineConfig({
   plugins: [
     viteMcpPlugin({
+      // Uncommenting the below will put the plugin into "SSR mode",
+      // allowing it to inject its scripts into the matching module
+      // instead of index.html served by Vite.
+      // transformModule: /src\/main\.js/,
       tools: [readConsoleTool, takeScreenshotTool],
     }),
   ],
