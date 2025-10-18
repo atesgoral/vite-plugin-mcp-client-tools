@@ -53,6 +53,21 @@ export default defineConfig({
 
 Then configure your MCP client (e.g., Claude Code, Cursor) to connect to the Vite dev server's MCP endpoint at `http://localhost:5173/mcp` (or your configured Vite port).
 
+## Advanced Options
+
+Include `tranformModule` as a regular expression that matches a module served by Vite to let the plugin inject its code into that module instead of modifying index.html, for cases where index.html is not served by Vite. In Vite plugin parlance, this makes the plugin use `transform` on the matching module instead of using `transformIndexHtml`.
+
+```ts
+export default defineConfig({
+  transformModule: /src\/main\.js/,
+  plugins: [
+    viteMcpPlugin({
+      tools: [readConsoleTool, takeScreenshotTool],
+    }),
+  ],
+});
+```
+
 ## Available Tools
 
 ### `take-screenshot`
@@ -174,6 +189,9 @@ npm install
 
 # Build the plugin
 npm run build
+
+# Build the plugin in watch mode
+npm run dev
 
 # Run the example (in a separate terminal)
 cd example
