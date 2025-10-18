@@ -118,6 +118,7 @@ export function viteMcpPlugin({
 
   return {
     name: "Model Context Protocol Plugin",
+    apply: 'serve',
     configureServer(server: ViteDevServer) {
       viteServer = server;
 
