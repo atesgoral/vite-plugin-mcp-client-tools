@@ -53,21 +53,6 @@ export default defineConfig({
 
 Then configure your MCP client (e.g., Claude Code, Cursor) to connect to the Vite dev server's MCP endpoint at `http://localhost:5173/mcp` (or your configured Vite port).
 
-## Advanced Options
-
-Include `tranformModule` as a regular expression that matches a module served by Vite to let the plugin inject its code into that module instead of modifying index.html, for cases where index.html is not served by Vite. In Vite plugin parlance, this makes the plugin use `transform` on the matching module instead of using `transformIndexHtml`.
-
-```ts
-export default defineConfig({
-  transformModule: /src\/main\.js/,
-  plugins: [
-    viteMcpPlugin({
-      tools: [readConsoleTool, takeScreenshotTool],
-    }),
-  ],
-});
-```
-
 ## Available Tools
 
 ### `take-screenshot`
@@ -180,6 +165,27 @@ The `example/` directory contains a minimal Vite app demonstrating both tools:
 - Ready to test with your coding agent
 
 See `example/README.md` for setup instructions.
+
+## Advanced Options
+
+Include `transformModule` as a regular expression that matches a module served by Vite to let the plugin inject its code into that module instead of modifying index.html, for cases where index.html is not served by Vite. In Vite plugin parlance, this makes the plugin use `transform` on the matching module instead of using `transformIndexHtml`.
+
+```ts
+export default defineConfig({
+  plugins: [
+    viteMcpPlugin({
+      transformModule: /src\/main\.js/,
+      tools: [readConsoleTool, takeScreenshotTool],
+    }),
+  ],
+});
+```
+
+You also need to include the MCP Bridge virtual module from page, matching the base URL of the Vite server:
+
+```html
+<script type="module" src="/virtual:mcp-bridge"></script>
+```
 
 ## Development
 
