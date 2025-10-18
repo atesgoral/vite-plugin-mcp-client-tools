@@ -181,7 +181,7 @@ export default defineConfig({
 });
 ```
 
-You also need to include the MCP Bridge virtual module from page, matching the base URL of the Vite server:
+You also need to include the MCP Bridge virtual module from your page, matching the base URL of the Vite server:
 
 ```html
 <script type="module" src="/virtual:mcp-bridge"></script>
